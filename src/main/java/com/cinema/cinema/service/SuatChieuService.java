@@ -4,6 +4,7 @@ import com.cinema.cinema.dto.request.ReqSuatChieuDTO;
 import com.cinema.cinema.dto.response.ResSuatChieuDTO;
 import com.cinema.cinema.entity.Phim;
 import com.cinema.cinema.entity.PhongChieu;
+import com.cinema.cinema.entity.Rap;
 import com.cinema.cinema.entity.SuatChieu;
 import com.cinema.cinema.repository.PhimRepository;
 import com.cinema.cinema.repository.PhongChieuRepository;
@@ -13,8 +14,12 @@ import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 @Service
@@ -119,7 +124,53 @@ public class SuatChieuService {
         if (!repository.existsById(id)) {
             throw new RuntimeException("Không tìm thấy suất chiếu để xóa!");
         }
-
         repository.deleteById(id);
+    }
+
+    //Chọn phim -> Hiển thị các rạp đang chiếu
+    public List<Map<String, Object>> getLichTheoPhim(Integer phimId, LocalDate ngay) {
+        LocalDateTime now = (ngay.isEqual(LocalDate.now())) ? LocalDateTime.now() : ngay.atStartOfDay();
+        List<SuatChieu> list = repository.findByPhimAndNgay(phimId, ngay, now);
+
+        // Nhóm theo đối tượng Rap
+        Map<Rap, List<SuatChieu>> grouped = list.stream().collect(Collectors.groupingBy(s -> s.getPhongChieu().getRap()));
+
+        return grouped.entrySet().stream().map(e -> {
+            Map<String, Object> map = new HashMap<>();
+            map.put("idRap", e.getKey().getIdRap());
+            map.put("tenRap", e.getKey().getTenRap());
+            map.put("danhSachSuat", buildSuatChieuNode(e.getValue()));
+            return map;
+        }).collect(Collectors.toList());
+    }
+
+    //Chọn rạp -> Hiển thị các phim đang chiếu
+    public List<Map<String, Object>> getLichTheoRap(Integer rapId, LocalDate ngay) {
+        LocalDateTime now = (ngay.isEqual(LocalDate.now())) ? LocalDateTime.now() : ngay.atStartOfDay();
+        List<SuatChieu> list = repository.findByRapAndNgay(rapId, ngay, now);
+
+        // Nhóm theo đối tượng Phim
+        Map<Phim, List<SuatChieu>> grouped = list.stream().collect(Collectors.groupingBy(SuatChieu::getPhim));
+
+        return grouped.entrySet().stream().map(e -> {
+            Map<String, Object> map = new HashMap<>();
+            map.put("idPhim", e.getKey().getIdPhim());
+            map.put("tenPhim", e.getKey().getTen());
+            map.put("thoiLuong", e.getKey().getThoiLuong());
+            map.put("danhSachSuat", buildSuatChieuNode(e.getValue()));
+            return map;
+        }).collect(Collectors.toList());
+    }
+
+    //Đóng gói danh sách giờ chiếu
+    private List<Map<String, Object>> buildSuatChieuNode(List<SuatChieu> list) {
+        DateTimeFormatter dtf = DateTimeFormatter.ofPattern("HH:mm");
+        return list.stream().map(s -> {
+            Map<String, Object> node = new HashMap<>();
+            node.put("idSuat", s.getIdSuatChieu());
+            node.put("batDau", s.getThoiGianBatDau().format(dtf));
+            node.put("gia", s.getGiaMoiVe());
+            return node;
+        }).collect(Collectors.toList());
     }
 }
