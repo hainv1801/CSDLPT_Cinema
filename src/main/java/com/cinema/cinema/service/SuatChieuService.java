@@ -9,9 +9,11 @@ import com.cinema.cinema.entity.SuatChieu;
 import com.cinema.cinema.repository.PhimRepository;
 import com.cinema.cinema.repository.PhongChieuRepository;
 import com.cinema.cinema.repository.SuatChieuRepository;
+import com.cinema.cinema.specification.SuatChieuSpecification;
 import jakarta.transaction.Transactional;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDate;
@@ -125,6 +127,15 @@ public class SuatChieuService {
             throw new RuntimeException("Không tìm thấy suất chiếu để xóa!");
         }
         repository.deleteById(id);
+    }
+
+    //Tìm kiếm suất chiếu
+    public List<ResSuatChieuDTO> searchSuatChieu(Integer idPhim, LocalDate ngay, String khuVuc) {
+        Specification<SuatChieu> spec = SuatChieuSpecification.filterShowtimes(idPhim, ngay, khuVuc);
+
+        return repository.findAll(spec).stream()
+                .map(this::mapToResponse) // Tái sử dụng hàm map đã viết ở các phần trước
+                .collect(Collectors.toList());
     }
 
     //Chọn phim -> Hiển thị các rạp đang chiếu

@@ -11,6 +11,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.HashSet;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -33,6 +35,20 @@ public class PhimService {
     public ResPhimDTO getById(Integer id) {
         Phim phim = phimRepository.findById(id).orElseThrow(() -> new RuntimeException("Không tìm thấy phim"));
         return mapToResponse(phim);
+    }
+
+    //Lấy danh sách phim đang chiếu
+    public List<ResPhimDTO> getDanhSachPhimDangChieu() {
+        LocalDateTime now = LocalDateTime.now();
+        List<Phim> danhSachGoc = phimRepository.findPhimDangChieu(now);
+        return mapListToResponse(danhSachGoc);
+    }
+
+    //Lấy danh sách phim sắp chiếu
+    public List<ResPhimDTO> getDanhSachPhimSapChieu() {
+        LocalDate today = LocalDate.now();
+        List<Phim> danhSachGoc = phimRepository.findPhimSapChieu(today);
+        return mapListToResponse(danhSachGoc);
     }
 
     //3. Tạo phim mới
@@ -75,5 +91,21 @@ public class PhimService {
         BeanUtils.copyProperties(phim, res);
         res.setTenTheLoais(phim.getTheLoais().stream().map(TheLoai::getNoiDung).collect(Collectors.toList()));
         return res;
+    }
+
+    private List<ResPhimDTO> mapListToResponse(List<Phim> listPhim) {
+        return listPhim.stream().map(phim -> {
+            ResPhimDTO res = new ResPhimDTO();
+            BeanUtils.copyProperties(phim, res);
+
+            // Xử lý lấy danh sách tên Thể Loại (để UI in ra "Hành Động, Hài, Kịch Tính")
+            if (phim.getTheLoais() != null && !phim.getTheLoais().isEmpty()) {
+                List<String> tenTheLoais = phim.getTheLoais().stream()
+                        .map(TheLoai::getNoiDung)
+                        .collect(Collectors.toList());
+                res.setTenTheLoais(tenTheLoais);
+            }
+            return res;
+        }).collect(Collectors.toList());
     }
 }
