@@ -4,6 +4,7 @@ import jakarta.persistence.*;
 import lombok.*;
 import java.time.LocalDate;
 import java.util.Set;
+import java.util.HashSet;
 
 @Entity
 @Table(name = "Phim")
@@ -35,6 +36,10 @@ public class Phim {
 
     // Tự động xử lý bảng trung gian TheLoaiPhim (Quan hệ N-N)
     @ManyToMany(fetch = FetchType.LAZY)
-    @JoinTable(name = "TheLoaiPhim", joinColumns = @JoinColumn(name = "id_Phim"), inverseJoinColumns = @JoinColumn(name = "id_TheLoai"))
-    private Set<TheLoai> theLoais;
+    @JoinTable(
+            name = "TheLoaiPhim",
+            joinColumns = @JoinColumn(name = "id_Phim"),
+            inverseJoinColumns = @JoinColumn(name = "id_TheLoai")
+    )
+    private Set<TheLoai> theLoais = new HashSet<>();
 }
