@@ -1,6 +1,7 @@
 package com.cinema.cinema.service;
 
 import com.cinema.cinema.dto.request.ReqPhimDTO;
+import com.cinema.cinema.dto.response.ResChiTietPhimDTO;
 import com.cinema.cinema.dto.response.ResPhimDTO;
 import com.cinema.cinema.entity.Phim;
 import com.cinema.cinema.entity.TheLoai;
@@ -49,6 +50,29 @@ public class PhimService {
         LocalDate today = LocalDate.now();
         List<Phim> danhSachGoc = phimRepository.findPhimSapChieu(today);
         return mapListToResponse(danhSachGoc);
+    }
+
+    //Lấy chi tiết 1 bộ phim
+    public ResChiTietPhimDTO getChiTietPhim(Integer idPhim) {
+        // 1. Tìm phim trong Database
+        Phim phim = phimRepository.findById(idPhim)
+                .orElseThrow(() -> new RuntimeException("Không tìm thấy phim với ID: " + idPhim));
+
+        // 2. Chuyển đổi từ Entity sang DTO
+        ResChiTietPhimDTO response = new ResChiTietPhimDTO();
+        BeanUtils.copyProperties(phim, response);
+        response.setIdPhim(phim.getIdPhim());
+
+        // 3. Xử lý lấy danh sách Tên Thể Loại
+        if (phim.getTheLoais() != null && !phim.getTheLoais().isEmpty()) {
+            response.setDanhSachTheLoai(
+                    phim.getTheLoais().stream()
+                            .map(TheLoai::getNoiDung)
+                            .collect(Collectors.toList())
+            );
+        }
+
+        return response;
     }
 
     //3. Tạo phim mới

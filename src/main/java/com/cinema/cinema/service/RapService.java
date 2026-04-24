@@ -1,12 +1,14 @@
 package com.cinema.cinema.service;
 
 import com.cinema.cinema.dto.request.RapDTO;
+import com.cinema.cinema.dto.response.ResKhuVucRapDTO;
 import com.cinema.cinema.entity.Rap;
 import com.cinema.cinema.repository.RapRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 @Service
@@ -61,5 +63,18 @@ public class RapService {
         dto.setDiaChi(rap.getDiaChi());
         dto.setKhuVuc(rap.getKhuVuc());
         return dto;
+    }
+
+    //Lấy toàn bộ rạp đã được chia theo khu vực
+    public List<ResKhuVucRapDTO> getHeThongRapGomNhom() {
+
+        List<Rap> tatCaRap = rapRepository.findAll();
+
+        Map<String, List<Rap>> mapGomNhom = tatCaRap.stream()
+                .collect(Collectors.groupingBy(Rap::getDiaChi));
+
+        return mapGomNhom.entrySet().stream()
+                .map(entry -> new ResKhuVucRapDTO(entry.getKey(), entry.getValue()))
+                .collect(Collectors.toList());
     }
 }
