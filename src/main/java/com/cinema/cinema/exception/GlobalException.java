@@ -22,7 +22,9 @@ public class GlobalException {
     @ExceptionHandler(value = {
             IdInvalidException.class,
             BadCredentialsException.class,
-            UsernameNotFoundException.class
+            UsernameNotFoundException.class,
+            SeatAlreadyBookedException.class,
+            SystemTransactionException.class,
     })
     public ResponseEntity<RestResponse<Object>> handleIdException(Exception ex) {
         RestResponse<Object> res = new RestResponse<>();

@@ -16,8 +16,9 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 public class HoaDon {
 
     @Id
-    @Column(name = "id_HoaDon")
-    private Integer idHoaDon;
+    @GeneratedValue(generator = "UUID")
+    @Column(name = "id_HoaDon", updatable = false, nullable = false)
+    private String idHoaDon; // Đã đổi sang String/UUID
 
     @Column(name = "ngayThanhToan", nullable = false)
     private LocalDateTime ngayThanhToan;
