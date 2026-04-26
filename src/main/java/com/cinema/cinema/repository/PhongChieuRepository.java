@@ -13,6 +13,6 @@ import java.util.List;
 public interface PhongChieuRepository extends JpaRepository<PhongChieu, Integer> {
 
     // Tìm danh sách phòng thuộc về 1 Rạp cụ thể
-    @Query("SELECT p FROM PhongChieu p WHERE p.rap.id_Rap = :idRap")
+    @Query("SELECT p FROM PhongChieu p WHERE p.rap.idRap = :idRap")
     List<PhongChieu> findByRapId(@Param("idRap") Integer idRap);
 }

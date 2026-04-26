@@ -20,18 +20,18 @@ public class PublicPhimController {
     // Lấy danh sách Phim Đang Chiếu
     @GetMapping("/dang-chieu")
     public ResponseEntity<List<ResPhimDTO>> getPhimDangChieu() {
-        List<ResPhimDTO> danhSach = phimService.getDanhSachPhimDangChieu();
+        List<ResPhimDTO> danhSach = phimService.getAll();
         return ResponseEntity.ok(danhSach);
     }
 
-    //Lấy danh sách Phim Sắp Chiếu
+    // Lấy danh sách Phim Sắp Chiếu
     @GetMapping("/sap-chieu")
     public ResponseEntity<List<ResPhimDTO>> getPhimSapChieu() {
         List<ResPhimDTO> danhSach = phimService.getDanhSachPhimSapChieu();
         return ResponseEntity.ok(danhSach);
     }
 
-    //Lấy chi tiết 1 bộ phim
+    // Lấy chi tiết 1 bộ phim
     @GetMapping("/{id}")
     public ResponseEntity<ResChiTietPhimDTO> getChiTietPhim(@PathVariable("id") Integer id) {
         ResChiTietPhimDTO chiTiet = phimService.getChiTietPhim(id);

@@ -13,6 +13,7 @@ public class ResChiTietPhimDTO {
     private Integer thoiLuong;
     private String ngonNguChinh;
     private String noiDung;
+    private String poster;
 
     private List<String> danhSachTheLoai;
 }

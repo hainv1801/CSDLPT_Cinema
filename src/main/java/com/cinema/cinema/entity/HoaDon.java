@@ -16,9 +16,9 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 public class HoaDon {
 
     @Id
-    @GeneratedValue(generator = "UUID")
-    @Column(name = "id_HoaDon", updatable = false, nullable = false)
-    private String idHoaDon; // Đã đổi sang String/UUID
+    @GeneratedValue(strategy = GenerationType.IDENTITY) // 👉 Đổi về IDENTITY
+    @Column(name = "id_HoaDon") // Xóa cái generator UUID đi
+    private Integer idHoaDon;
 
     @Column(name = "ngayThanhToan", nullable = false)
     private LocalDateTime ngayThanhToan;

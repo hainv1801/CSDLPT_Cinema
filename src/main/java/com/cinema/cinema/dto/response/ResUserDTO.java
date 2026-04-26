@@ -1,5 +1,7 @@
 package com.cinema.cinema.dto.response;
 
+import java.time.LocalDate;
+
 import lombok.Getter;
 import lombok.Setter;
 
@@ -12,4 +14,5 @@ public class ResUserDTO {
     private String email;
     private String sdt;
     private String vaiTro;
+    private LocalDate ngaySinh;
 }

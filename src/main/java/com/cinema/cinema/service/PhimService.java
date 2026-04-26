@@ -27,32 +27,32 @@ public class PhimService {
     @Autowired
     private TheLoaiRepository theLoaiRepository;
 
-    //1. Lấy tất cả phim
+    // 1. Lấy tất cả phim
     public List<ResPhimDTO> getAll() {
         return phimRepository.findAll().stream().map(this::mapToResponse).collect(Collectors.toList());
     }
 
-    //2. Lấy 1 phim
+    // 2. Lấy 1 phim
     public ResPhimDTO getById(Integer id) {
         Phim phim = phimRepository.findById(id).orElseThrow(() -> new RuntimeException("Không tìm thấy phim"));
         return mapToResponse(phim);
     }
 
-    //Lấy danh sách phim đang chiếu
+    // Lấy danh sách phim đang chiếu
     public List<ResPhimDTO> getDanhSachPhimDangChieu() {
         LocalDateTime now = LocalDateTime.now();
         List<Phim> danhSachGoc = phimRepository.findPhimDangChieu(now);
         return mapListToResponse(danhSachGoc);
     }
 
-    //Lấy danh sách phim sắp chiếu
+    // Lấy danh sách phim sắp chiếu
     public List<ResPhimDTO> getDanhSachPhimSapChieu() {
         LocalDate today = LocalDate.now();
         List<Phim> danhSachGoc = phimRepository.findPhimSapChieu(today);
         return mapListToResponse(danhSachGoc);
     }
 
-    //Lấy chi tiết 1 bộ phim
+    // Lấy chi tiết 1 bộ phim
     public ResChiTietPhimDTO getChiTietPhim(Integer idPhim) {
         // 1. Tìm phim trong Database
         Phim phim = phimRepository.findById(idPhim)
@@ -62,20 +62,20 @@ public class PhimService {
         ResChiTietPhimDTO response = new ResChiTietPhimDTO();
         BeanUtils.copyProperties(phim, response);
         response.setIdPhim(phim.getIdPhim());
-
+        response.setThoiLuong(phim.getThoiLuong());
+        response.setPoster(phim.getPoster());
         // 3. Xử lý lấy danh sách Tên Thể Loại
         if (phim.getTheLoais() != null && !phim.getTheLoais().isEmpty()) {
             response.setDanhSachTheLoai(
                     phim.getTheLoais().stream()
                             .map(TheLoai::getNoiDung)
-                            .collect(Collectors.toList())
-            );
+                            .collect(Collectors.toList()));
         }
 
         return response;
     }
 
-    //3. Tạo phim mới
+    // 3. Tạo phim mới
     @Transactional
     public ResPhimDTO create(ReqPhimDTO request) {
         Phim phim = new Phim();
@@ -83,7 +83,7 @@ public class PhimService {
         return mapToResponse(phimRepository.save(phim));
     }
 
-    //4. Cập nhật thông tin phim
+    // 4. Cập nhật thông tin phim
     @Transactional
     public ResPhimDTO update(Integer id, ReqPhimDTO request) {
         Phim phim = phimRepository.findById(id).orElseThrow(() -> new RuntimeException("Không tìm thấy phim"));
@@ -91,9 +91,10 @@ public class PhimService {
         return mapToResponse(phimRepository.save(phim));
     }
 
-    //5. Xóa phim
+    // 5. Xóa phim
     public void delete(Integer id) {
-        if (!phimRepository.existsById(id)) throw new RuntimeException("Không tìm thấy phim để xóa");
+        if (!phimRepository.existsById(id))
+            throw new RuntimeException("Không tìm thấy phim để xóa");
         phimRepository.deleteById(id);
     }
 
@@ -103,8 +104,10 @@ public class PhimService {
         phim.setThoiLuong(request.getThoiLuong());
         phim.setNgonNguChinh(request.getNgonNguChinh());
         phim.setNoiDung(request.getNoiDung());
-
-        if(request.getThoiLuong() != null) {
+        if (request.getPoster() != null && !request.getPoster().isEmpty()) {
+            phim.setPoster(request.getPoster());
+        }
+        if (request.getTheLoaiIds() != null) {
             List<TheLoai> theLoais = theLoaiRepository.findAllById(request.getTheLoaiIds());
             phim.setTheLoais(new HashSet<>(theLoais));
         }
@@ -113,6 +116,7 @@ public class PhimService {
     private ResPhimDTO mapToResponse(Phim phim) {
         ResPhimDTO res = new ResPhimDTO();
         BeanUtils.copyProperties(phim, res);
+        res.setId(phim.getIdPhim());
         res.setTenTheLoais(phim.getTheLoais().stream().map(TheLoai::getNoiDung).collect(Collectors.toList()));
         return res;
     }

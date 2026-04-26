@@ -25,6 +25,8 @@ public class Ghe {
     @Column(name = "trangThai", nullable = false)
     private String trangThai;
 
+    @Column(name = "daDat")
+    private Integer daDAt;
     // Khóa ngoại liên kết với bảng PhongChieu
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "id_PhongChieu", nullable = false)

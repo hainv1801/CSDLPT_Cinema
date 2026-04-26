@@ -6,6 +6,7 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.query.Procedure;
 import org.springframework.data.repository.query.Param;
 
+import com.cinema.cinema.entity.SuatChieu;
 import com.cinema.cinema.entity.Ve;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.stereotype.Repository;
@@ -49,4 +50,6 @@ public interface VeRepository extends JpaRepository<Ve, Integer> {
         List<DoanhThuNgayDTO> thongKeDoanhThuTheoNgay(
                         @Param("tuNgay") LocalDateTime tuNgay,
                         @Param("denNgay") LocalDateTime denNgay);
+
+        List<Ve> findBySuatChieu(SuatChieu suatChieu);
 }

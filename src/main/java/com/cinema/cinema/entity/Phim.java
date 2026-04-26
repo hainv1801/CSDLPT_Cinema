@@ -26,7 +26,7 @@ public class Phim {
     private LocalDate ngayPhatHanh;
 
     @Column(name = "thoiLuong", nullable = false)
-    private Double thoiLuong;
+    private Integer thoiLuong;
 
     @Column(name = "ngonNguChinh", nullable = false)
     private String ngonNguChinh;
@@ -34,12 +34,10 @@ public class Phim {
     @Column(name = "noiDung", nullable = false, columnDefinition = "NVARCHAR(MAX)")
     private String noiDung;
 
+    @Column(name = "poster", columnDefinition = "NVARCHAR(MAX)")
+    private String poster;
     // Tự động xử lý bảng trung gian TheLoaiPhim (Quan hệ N-N)
     @ManyToMany(fetch = FetchType.LAZY)
-    @JoinTable(
-            name = "TheLoaiPhim",
-            joinColumns = @JoinColumn(name = "id_Phim"),
-            inverseJoinColumns = @JoinColumn(name = "id_TheLoai")
-    )
+    @JoinTable(name = "TheLoaiPhim", joinColumns = @JoinColumn(name = "id_Phim"), inverseJoinColumns = @JoinColumn(name = "id_TheLoai"))
     private Set<TheLoai> theLoais = new HashSet<>();
 }

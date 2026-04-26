@@ -1,5 +1,7 @@
 package com.cinema.cinema.dto.request;
 
+import java.time.LocalDate;
+
 import jakarta.validation.constraints.NotBlank;
 import lombok.Getter;
 import lombok.Setter;
@@ -14,6 +16,7 @@ public class ReqUpdateUserDTO {
     private String email;
 
     @NotBlank(message = "SDT không được để trống")
-    private String SDT;
+    private String sdt;
 
+    private LocalDate ngaySinh;
 }

@@ -18,8 +18,8 @@ public class PublicRapController {
     private RapService rapService;
 
     @GetMapping
-    public ResponseEntity<List<ResKhuVucRapDTO>> getHeThongRap() {
-        return ResponseEntity.ok(rapService.getHeThongRapGomNhom());
+    public ResponseEntity<List<RapDTO>> getHeThongRap() {
+        return ResponseEntity.ok(rapService.getAllRaps());
     }
 
     @GetMapping("/{id}")

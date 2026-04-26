@@ -68,10 +68,13 @@ public class NguoiDungService {
             if (req.getEmail() != null) {
                 currentUser.setEmail(req.getEmail());
             }
-            if (req.getSDT() != null) {
-                currentUser.setSdt(req.getSDT());
+            if (req.getSdt() != null) {
+                currentUser.setSdt(req.getSdt());
             }
 
+            if (req.getNgaySinh() != null) {
+                currentUser.setNgaySinh(req.getNgaySinh());
+            }
             // 3. Đem chính ông user vừa được đè thông tin mới này đi cất
             return this.nguoiDungRepository.save(currentUser);
         }
@@ -86,6 +89,7 @@ public class NguoiDungService {
         res.setEmail(user.getEmail());
         res.setSdt(user.getSdt());
         res.setVaiTro(user.getVaiTro());
+        res.setNgaySinh(user.getNgaySinh());
         return res;
     }
 }
