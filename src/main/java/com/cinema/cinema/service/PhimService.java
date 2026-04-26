@@ -125,7 +125,7 @@ public class PhimService {
         return listPhim.stream().map(phim -> {
             ResPhimDTO res = new ResPhimDTO();
             BeanUtils.copyProperties(phim, res);
-
+            res.setId(phim.getIdPhim());
             // Xử lý lấy danh sách tên Thể Loại (để UI in ra "Hành Động, Hài, Kịch Tính")
             if (phim.getTheLoais() != null && !phim.getTheLoais().isEmpty()) {
                 List<String> tenTheLoais = phim.getTheLoais().stream()
