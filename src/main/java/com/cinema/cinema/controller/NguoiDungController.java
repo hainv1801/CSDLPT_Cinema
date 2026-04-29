@@ -1,20 +1,28 @@
 package com.cinema.cinema.controller;
 
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.jpa.domain.Specification;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.cinema.cinema.dto.request.ReqUpdateUserDTO;
 import com.cinema.cinema.dto.response.ResUserDTO;
+import com.cinema.cinema.dto.response.ResultPaginationDTO;
 import com.cinema.cinema.entity.NguoiDung;
+import com.cinema.cinema.exception.IdInvalidException;
 import com.cinema.cinema.service.NguoiDungService;
 import com.cinema.cinema.util.ApiMessage;
 import com.cinema.cinema.util.SecurityUtil;
 
 import jakarta.validation.Valid;
-
+import com.turkraft.springfilter.boot.Filter;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 
@@ -28,14 +36,13 @@ public class NguoiDungController {
         this.nguoiDungService = nguoiDungService;
     }
 
-    // // 1. API dành riêng cho QUẢN LÝ (Lấy danh sách tất cả user)
-    // @GetMapping("/all")
-    // @ApiMessage("Lấy danh sách toàn bộ người dùng")
-    // @PreAuthorize("hasRole('QUANLY')") // CHỈ CÓ ROLE_QUANLY MỚI ĐƯỢC VÀO
-    // public ResponseEntity<String> getAllUsers() {
-    // return ResponseEntity.ok("Xin chào sếp! Đây là danh sách toàn bộ khách hàng
-    // và nhân viên.");
-    // }
+    @GetMapping("")
+    @ApiMessage("fetch all users")
+    @PreAuthorize("hasRole('QUANLY')")
+    public ResponseEntity<ResultPaginationDTO> getAllUser(
+            @Filter Specification spec, Pageable pageable) {
+        return ResponseEntity.status(HttpStatus.OK).body(this.nguoiDungService.fetchAllUser(spec, pageable));
+    }
 
     @GetMapping("/me")
     @ApiMessage("Lấy thông tin cá nhân thành công")
@@ -59,5 +66,27 @@ public class NguoiDungController {
         NguoiDung updatedUser = this.nguoiDungService.handleUpdateUser(reqUpdateUserDTO, taiKhoan);
 
         return ResponseEntity.ok(this.nguoiDungService.convertToResUserDTO(updatedUser));
+    }
+
+    @DeleteMapping("/{id}")
+    @PreAuthorize("hasRole('QUANLY')")
+    public ResponseEntity<Void> deleteUser(@PathVariable Integer id) throws IdInvalidException {
+        NguoiDung currentUser = this.nguoiDungService.findById(id);
+        if (currentUser == null) {
+            throw new IdInvalidException("User khong ton tai");
+        }
+        nguoiDungService.deleteById(id); // Cần viết thêm hàm deleteById trong Service
+        return ResponseEntity.ok(null);
+    }
+
+    @PutMapping("/{id}/role")
+    @PreAuthorize("hasRole('QUANLY')")
+    public ResponseEntity<ResUserDTO> updateRole(@PathVariable Integer id, @RequestParam String role)
+            throws IdInvalidException {
+        NguoiDung currentUser = this.nguoiDungService.findById(id);
+        if (currentUser == null) {
+            throw new IdInvalidException("User khong ton tai");
+        }
+        return ResponseEntity.ok(nguoiDungService.convertToResUserDTO(this.nguoiDungService.updateUserRole(id, role)));
     }
 }

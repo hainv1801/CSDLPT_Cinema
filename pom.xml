@@ -97,6 +97,12 @@
 			<artifactId>cloudinary-http44</artifactId>
 			<version>1.33.0</version>
 		</dependency>
+
+		<dependency>
+			<groupId>com.turkraft.springfilter</groupId>
+			<artifactId>jpa</artifactId>
+			<version>3.1.7</version>
+		</dependency>
 	</dependencies>
 
 	<build>
