@@ -30,4 +30,5 @@ public class Ve {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "id_Ghe", nullable = false)
     private Ghe ghe;
+
 }

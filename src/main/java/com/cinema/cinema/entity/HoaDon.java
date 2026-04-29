@@ -16,8 +16,8 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 public class HoaDon {
 
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY) // 👉 Đổi về IDENTITY
-    @Column(name = "id_HoaDon") // Xóa cái generator UUID đi
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Column(name = "id_HoaDon")
     private Integer idHoaDon;
 
     @Column(name = "ngayThanhToan", nullable = false)

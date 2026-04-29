@@ -27,8 +27,12 @@ public class Ghe {
 
     @Column(name = "daDat")
     private Integer daDAt;
-    // Khóa ngoại liên kết với bảng PhongChieu
+
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "id_PhongChieu", nullable = false)
     private PhongChieu phongChieu;
+
+    public String getTen() {
+        return "" + (char) ('A' + this.getHang() - 1) + this.getCot();
+    }
 }

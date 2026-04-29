@@ -6,35 +6,39 @@ import java.util.Map;
 import java.util.stream.Collectors;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.jpa.domain.Specification;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
-import com.cinema.cinema.dto.request.ReqHoaDon;
-import com.cinema.cinema.dto.response.ResHoaDon;
+import com.cinema.cinema.dto.response.ResChiTietHoaDonDTO;
+import com.cinema.cinema.dto.response.ResHoaDonDTO;
+import com.cinema.cinema.dto.response.RestResponse;
+import com.cinema.cinema.dto.response.ResultPaginationDTO;
 import com.cinema.cinema.entity.HoaDon;
-import com.cinema.cinema.entity.NguoiDung;
 import com.cinema.cinema.entity.Ve;
-import com.cinema.cinema.repository.HoaDonRepository;
+import com.cinema.cinema.exception.IdInvalidException;
 import com.cinema.cinema.service.HoaDonService;
-import com.cinema.cinema.service.NguoiDungService;
-import com.cinema.cinema.util.SecurityUtil;
+import com.cinema.cinema.util.ApiMessage;
+import com.turkraft.springfilter.boot.Filter;
 
 @RestController
 @RequestMapping("/api/payments")
 
 public class HoaDonController {
     @Autowired
-    private HoaDonRepository hoaDonRepository;
+    private HoaDonService hoaDonService;
 
     @GetMapping("/lich-su/{idNguoiDung}")
     public ResponseEntity<?> getLichSuDatVe(@PathVariable("idNguoiDung") Integer idNguoiDung) {
-        List<HoaDon> listHoaDon = hoaDonRepository.findByNguoiDung_IdNguoiDungOrderByNgayThanhToanDesc(idNguoiDung);
+        List<HoaDon> listHoaDon = hoaDonService.getLichSu(idNguoiDung);
 
         // Chuyển đổi dữ liệu để Frontend dễ đọc
         List<Map<String, Object>> result = listHoaDon.stream().map(hd -> {
@@ -68,5 +72,33 @@ public class HoaDonController {
         }).collect(Collectors.toList());
 
         return ResponseEntity.ok(result);
+    }
+
+    @GetMapping("")
+    @PreAuthorize("hasAnyRole('QUANLY', 'NHANVIEN')")
+    public ResponseEntity<ResultPaginationDTO> getAllInvoices(
+            @Filter Specification<HoaDon> spec,
+            Pageable pageable) {
+        return ResponseEntity.status(HttpStatus.OK).body(this.hoaDonService.fetchAllHoaDon(spec, pageable));
+    }
+
+    // 2. Cập nhật trạng thái hóa đơn
+    @PutMapping("/{id}/status")
+    @PreAuthorize("hasAnyRole('QUANLY', 'NHANVIEN')")
+    public ResponseEntity<ResHoaDonDTO> updateInvoiceStatus(
+            @PathVariable Integer id,
+            @RequestParam String status) throws IdInvalidException {
+        HoaDon hoaDon = this.hoaDonService.findById(id);
+        if (hoaDon == null) {
+            throw new IdInvalidException("Hoa don khong ton tai");
+        }
+        return ResponseEntity.ok(this.hoaDonService.convertToResHoaDonDTO(this.hoaDonService.updateStatus(id, status)));
+    }
+
+    @GetMapping("/{id}")
+    @PreAuthorize("hasAnyRole('QUANLY', 'NHANVIEN')")
+    @ApiMessage("lấy chi tiết hóa đơn")
+    public ResponseEntity<ResChiTietHoaDonDTO> getInvoiceDetail(@PathVariable Integer id) {
+        return ResponseEntity.ok(this.hoaDonService.handleGetChiTietHoaDon(id));
     }
 }
