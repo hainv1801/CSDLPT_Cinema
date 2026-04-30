@@ -34,10 +34,11 @@ public class UserDetailsCustom implements UserDetailsService {
         // 2. Gắn thêm chữ ROLE_ để Spring Security nhận diện quyền
         String userRole = "ROLE_" + user.getVaiTro();
 
-        // 3. Trả về đối tượng User của chính Spring Security
-        return new User(
+        // 3. Trả về đối tượng CustomUserDetails
+        return new CustomUserDetails(
                 user.getTaiKhoan(),
                 user.getMatKhau(),
-                Collections.singletonList(new SimpleGrantedAuthority(userRole)));
+                Collections.singletonList(new SimpleGrantedAuthority(userRole)),
+                user.getMaCoSo());
     }
 }

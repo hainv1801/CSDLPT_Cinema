@@ -23,6 +23,7 @@ public class ResLoginDTO {
         private String taiKhoan;
         private String hoTen;
         private String vaiTro;
+        private String maCoSo;
     }
 
     @Getter
@@ -33,6 +34,7 @@ public class ResLoginDTO {
         private Integer id;
         private String taiKhoan;
         private String hoTen;
+        private String maCoSo;
     }
 
     @Getter

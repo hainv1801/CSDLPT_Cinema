@@ -1,30 +1,27 @@
 package com.cinema.cinema.service;
 
-import com.cinema.cinema.dto.request.ReqDatVeDTO;
 import com.cinema.cinema.dto.request.ReqSuatChieuDTO;
 import com.cinema.cinema.dto.response.ResGheDTO;
 import com.cinema.cinema.dto.response.ResSuatChieuDTO;
 import com.cinema.cinema.entity.Ghe;
-import com.cinema.cinema.entity.HoaDon;
-import com.cinema.cinema.entity.NguoiDung;
+
 import com.cinema.cinema.entity.Phim;
 import com.cinema.cinema.entity.PhongChieu;
-import com.cinema.cinema.entity.PhuongThucThanhToan;
 import com.cinema.cinema.entity.Rap;
 import com.cinema.cinema.entity.SuatChieu;
 import com.cinema.cinema.entity.Ve;
 import com.cinema.cinema.repository.GheRepository;
-import com.cinema.cinema.repository.HoaDonRepository;
-import com.cinema.cinema.repository.NguoiDungRepository;
+
 import com.cinema.cinema.repository.PhimRepository;
 import com.cinema.cinema.repository.PhongChieuRepository;
-import com.cinema.cinema.repository.PhuongThucThanhToanRepository;
 import com.cinema.cinema.repository.SuatChieuRepository;
 import com.cinema.cinema.repository.VeRepository;
 import com.cinema.cinema.specification.SuatChieuSpecification;
+
 import jakarta.transaction.Transactional;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 
@@ -50,12 +47,6 @@ public class SuatChieuService {
     private PhongChieuRepository phongRepository;
     @Autowired
     private GheRepository gheRepository;
-    @Autowired
-    private HoaDonRepository hoaDonRepository;
-    @Autowired
-    private NguoiDungRepository nguoiDungRepository;
-    @Autowired
-    private PhuongThucThanhToanRepository phuongThucRepository;
 
     @Transactional
     public ResSuatChieuDTO createSuatChieu(ReqSuatChieuDTO req) {
@@ -79,7 +70,6 @@ public class SuatChieuService {
         sc.setThoiGianBatDau(req.getThoiGianBatDau());
         sc.setPhim(phim);
         sc.setPhongChieu(phong);
-
         return mapToResponse(suatChieuRepository.save(sc));
     }
 
@@ -268,48 +258,5 @@ public class SuatChieuService {
         }
 
         return result;
-    }
-
-    @Transactional
-    public Integer datVe(ReqDatVeDTO req) {
-
-        SuatChieu suatChieu = suatChieuRepository.findById(req.getIdSuatChieu())
-                .orElseThrow(() -> new RuntimeException("Không tìm thấy suất chiếu"));
-
-        // 1. Lấy thông tin Người dùng và Phương thức thanh toán
-        NguoiDung nguoiDung = nguoiDungRepository.findById(req.getIdNguoiDung())
-                .orElseThrow(() -> new RuntimeException("Không tìm thấy người dùng"));
-
-        PhuongThucThanhToan pttt = phuongThucRepository.findById(req.getIdPhuongThucThanhToan())
-                .orElseThrow(() -> new RuntimeException("Không tìm thấy phương thức thanh toán"));
-        HoaDon hoaDon = new HoaDon();
-        hoaDon.setNgayThanhToan(LocalDateTime.now());
-        hoaDon.setTrangThai("DATHANHTOAN");
-        hoaDon.setNguoiDung(nguoiDung);
-        hoaDon.setPhuongThucThanhToan(pttt);
-
-        hoaDon = hoaDonRepository.save(hoaDon);
-        for (Integer idGhe : req.getDanhSachIdGhe()) {
-            Ghe ghe = gheRepository.findById(idGhe)
-                    .orElseThrow(() -> new RuntimeException("Không tìm thấy ghế"));
-
-            // Kiểm tra bảo mật kép: Lỡ có người khác vừa mua ghế này 1 giây trước
-            List<Ve> veDaBan = veRepository.findBySuatChieu(suatChieu);
-            boolean daBiMua = veDaBan.stream().anyMatch(v -> v.getGhe().getIdGhe().equals(idGhe));
-
-            if (daBiMua) {
-                throw new RuntimeException("Ghế " + (char) ('A' + ghe.getHang() - 1) + ghe.getCot()
-                        + " đã có người mua. Vui lòng chọn ghế khác!");
-            }
-
-            // Tạo vé mới
-            Ve veMoi = new Ve();
-            veMoi.setSuatChieu(suatChieu);
-            veMoi.setGhe(ghe);
-            veMoi.setTrangThai("CHUADUNG");
-            veMoi.setHoaDon(hoaDon);
-            veRepository.save(veMoi);
-        }
-        return hoaDon.getIdHoaDon();
     }
 }

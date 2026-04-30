@@ -2,10 +2,15 @@ package com.cinema.cinema.controller;
 
 import com.cinema.cinema.dto.request.ReqPhimDTO;
 import com.cinema.cinema.dto.response.ResPhimDTO;
+
 import com.cinema.cinema.service.PhimService;
+
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
+
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -34,14 +39,17 @@ public class AdminPhimController {
 
     // 3. Thêm bộ phim mới
     @PostMapping
-    public ResponseEntity<ResPhimDTO> createPhim(@RequestBody ReqPhimDTO request) {
+    @PreAuthorize("hasRole('QUANLY')")
+    public ResponseEntity<?> createPhim(@RequestBody ReqPhimDTO request) {
+
         ResPhimDTO newPhim = phimService.create(request);
-        return new ResponseEntity<>(newPhim, HttpStatus.CREATED); // HTTP 201 Created
+        return new ResponseEntity<>(newPhim, HttpStatus.CREATED);
     }
 
     // 4. Cập nhật thông tin phim
     @PutMapping("/{id}")
-    public ResponseEntity<ResPhimDTO> updatePhim(
+    @PreAuthorize("hasRole('QUANLY')")
+    public ResponseEntity<?> updatePhim(
             @PathVariable("id") Integer id,
             @RequestBody ReqPhimDTO request) {
 
@@ -51,7 +59,9 @@ public class AdminPhimController {
 
     // 5. Xóa bộ phim
     @DeleteMapping("/{id}")
+    @PreAuthorize("hasRole('QUANLY')")
     public ResponseEntity<String> deletePhim(@PathVariable Integer id) {
+
         phimService.delete(id);
         return ResponseEntity.ok("Đã xóa bộ phim thành công!"); // HTTP 200 OK
     }

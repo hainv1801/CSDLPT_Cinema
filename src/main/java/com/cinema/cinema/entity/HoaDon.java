@@ -37,4 +37,7 @@ public class HoaDon {
     @OneToMany(mappedBy = "hoaDon", fetch = FetchType.LAZY)
     @JsonIgnore
     private List<Ve> ves;
+
+    @Column(name = "MaCoSo")
+    private String maCoSo;
 }

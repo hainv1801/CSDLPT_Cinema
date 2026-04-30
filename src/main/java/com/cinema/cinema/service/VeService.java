@@ -21,47 +21,35 @@ public class VeService {
     private final VeRepository veRepository;
 
     @Transactional(rollbackFor = Exception.class)
-    // ^ Cực kỳ quan trọng: Rollback lại toàn bộ nếu có BẤT KỲ lỗi gì xảy ra
-    public void giuChoVaTaoVeTamThoi(String idHoaDon, Integer idSuatChieu, List<Integer> danhSachIdGhe) {
-        log.info("BẮT ĐẦU: Giữ chỗ cho Hóa Đơn [{}] - Suất chiếu [{}] - Ghế {}", idHoaDon, idSuatChieu, danhSachIdGhe);
+    public void giuChoVaTaoVeTamThoi(Integer idHoaDon, Integer idSuatChieu, List<Integer> danhSachIdGhe) {
+        log.info("BẮT ĐẦU: Đặt vé cho Hóa Đơn [{}] - Suất chiếu [{}]", idHoaDon, idSuatChieu);
 
         if (danhSachIdGhe == null || danhSachIdGhe.isEmpty()) {
             throw new IllegalArgumentException("Danh sách ghế không được để trống!");
         }
 
         for (Integer idGhe : danhSachIdGhe) {
-            // Gọi Stored Procedure dưới SQL Server để xử lý đồng thời (Tránh 2 người mua
-            // cùng 1 ghế)
-            log.debug("Đang gọi SP đặt ghế an toàn: idGhe={}", idGhe);
+            // Gọi SP dưới Database để đảm bảo xử lý đồng thời an toàn
             Integer result = veRepository.datGheAnToan(idSuatChieu, idGhe, idHoaDon);
 
-            if (result == 0) {
-                // Ghế đã bị người khác mua mất trong tích tắc
+            if (result == null || result == 0) {
                 log.warn("THẤT BẠI: Ghế ID [{}] đã bị đặt mất!", idGhe);
-                // Ném Exception sẽ làm @Transactional kích hoạt, tự động Rollback các ghế đã
-                // đặt trước đó trong vòng lặp này
+                // Ném lỗi để Spring Boot tự động Rollback toàn bộ Hóa Đơn và các Vé trước đó
                 throw new SeatAlreadyBookedException(
-                        "Rất tiếc, ghế số " + idGhe + " vừa có người nhanh tay đặt mất. Vui lòng chọn ghế khác!");
+                        "Rất tiếc, một số ghế bạn chọn vừa có người nhanh tay đặt mất. Vui lòng chọn ghế khác!");
             } else if (result == -1) {
-                // Lỗi từ phía Database (Deadlock, sập mạng...)
                 log.error("LỖI HỆ THỐNG: Database trả về -1 khi đặt ghế [{}]", idGhe);
                 throw new SystemTransactionException(
-                        "Hệ thống đang quá tải, không thể đặt vé lúc này. Vui lòng thử lại sau!");
+                        "Hệ thống đang bận, không thể đặt vé lúc này. Vui lòng thử lại sau!");
             }
         }
-
-        log.info("THÀNH CÔNG: Đã giữ chỗ toàn bộ ghế cho Hóa Đơn [{}]", idHoaDon);
+        log.info("THÀNH CÔNG: Đã tạo vé an toàn cho Hóa Đơn [{}]", idHoaDon);
     }
 
     @Transactional
-    public void chotVe(String idHoaDon) {
+    public void chotVe(Integer idHoaDon) {
         log.info("CHỐT VÉ: Bắt đầu chốt vé cứng cho Hóa Đơn [{}] sau khi thanh toán thành công", idHoaDon);
 
-        // Theo thiết kế DB, trạng thái vé khi Insert là 'CHUADUNG'
-        // Khi thanh toán xong, trạng thái vẫn là 'CHUADUNG' (Chờ ra rạp xem)
-        // Nên ở hàm này, về mặt Database không cần Update gì thêm bảng Ve.
-
-        // Mở rộng điểm cộng đồ án: Sinh mã QR hoặc gửi Email ở đây
         List<Ve> danhSachVe = veRepository.findByHoaDon_IdHoaDon(idHoaDon);
         if (danhSachVe.isEmpty()) {
             log.error("Lỗi nghiêm trọng: Không tìm thấy vé nào cho Hóa Đơn đã thanh toán [{}]", idHoaDon);
@@ -73,7 +61,7 @@ public class VeService {
     }
 
     @Transactional
-    public void huyGiuCho(String idHoaDon) {
+    public void huyGiuCho(Integer idHoaDon) {
         log.info("HỦY GIỮ CHỖ: Bắt đầu xóa các vé tạm của Hóa Đơn [{}]", idHoaDon);
         try {
             veRepository.deleteByHoaDon_IdHoaDon(idHoaDon);
@@ -84,7 +72,7 @@ public class VeService {
         }
     }
 
-    public List<Integer> layDanhSachVeTheoHoaDon(String idHoaDon) {
+    public List<Integer> layDanhSachVeTheoHoaDon(Integer idHoaDon) {
         List<Ve> veList = veRepository.findByHoaDon_IdHoaDon(idHoaDon);
         // Biến đổi List<Ve> thành List<Integer> (chỉ lấy ID vé)
         return veList.stream()

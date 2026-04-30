@@ -15,4 +15,5 @@ public class ResUserDTO {
     private String sdt;
     private String vaiTro;
     private LocalDate ngaySinh;
+    private String maCoSo;
 }

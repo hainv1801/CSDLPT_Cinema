@@ -11,6 +11,8 @@ import org.springframework.data.jpa.domain.Specification;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PutMapping;
@@ -18,6 +20,8 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.cinema.cinema.config.CustomUserDetails;
+import com.cinema.cinema.config.UserDetailsCustom;
 import com.cinema.cinema.dto.response.ResChiTietHoaDonDTO;
 import com.cinema.cinema.dto.response.ResHoaDonDTO;
 import com.cinema.cinema.dto.response.RestResponse;
@@ -27,6 +31,7 @@ import com.cinema.cinema.entity.Ve;
 import com.cinema.cinema.exception.IdInvalidException;
 import com.cinema.cinema.service.HoaDonService;
 import com.cinema.cinema.util.ApiMessage;
+import com.cinema.cinema.util.SecurityUtil;
 import com.turkraft.springfilter.boot.Filter;
 
 @RestController
@@ -79,7 +84,7 @@ public class HoaDonController {
     public ResponseEntity<ResultPaginationDTO> getAllInvoices(
             @Filter Specification<HoaDon> spec,
             Pageable pageable) {
-        return ResponseEntity.status(HttpStatus.OK).body(this.hoaDonService.fetchAllHoaDon(spec, pageable));
+        return ResponseEntity.ok(this.hoaDonService.fetchAllHoaDon(spec, pageable));
     }
 
     // 2. Cập nhật trạng thái hóa đơn

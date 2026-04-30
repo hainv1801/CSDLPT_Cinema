@@ -92,7 +92,8 @@ public class AuthController {
                     currentUserDB.getIdNguoiDung(),
                     currentUserDB.getTaiKhoan(),
                     currentUserDB.getHoTen(),
-                    currentUserDB.getVaiTro());
+                    currentUserDB.getVaiTro(),
+                    currentUserDB.getMaCoSo());
             res.setUser(userLogin);
         }
 
@@ -132,6 +133,7 @@ public class AuthController {
             userLogin.setTaiKhoan(currentUserDB.getTaiKhoan());
             userLogin.setHoTen(currentUserDB.getHoTen());
             userLogin.setVaiTro(currentUserDB.getVaiTro());
+            userLogin.setMaCoSo(currentUserDB.getMaCoSo());
             userGetAccount.setUser(userLogin);
         }
         return ResponseEntity.ok().body(userGetAccount);
@@ -156,7 +158,7 @@ public class AuthController {
         ResLoginDTO res = new ResLoginDTO();
         ResLoginDTO.UserLogin userLogin = new ResLoginDTO.UserLogin(
                 currentUser.getIdNguoiDung(), currentUser.getTaiKhoan(), currentUser.getHoTen(),
-                currentUser.getVaiTro());
+                currentUser.getVaiTro(), currentUser.getMaCoSo());
         res.setUser(userLogin);
 
         String access_token = this.securityUtil.createAccessToken(taiKhoan, res);

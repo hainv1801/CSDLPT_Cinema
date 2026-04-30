@@ -46,4 +46,7 @@ public class NguoiDung {
 
     @Column(columnDefinition = "VARCHAR(MAX)")
     private String refreshToken;
+
+    @Column(name = "MaCoSo")
+    private String maCoSo;
 }

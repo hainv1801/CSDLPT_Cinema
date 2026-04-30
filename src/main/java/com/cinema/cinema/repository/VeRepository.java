@@ -17,16 +17,19 @@ import java.util.List;
 @Repository
 public interface VeRepository extends JpaRepository<Ve, Integer> {
         // Gọi Stored Procedure từ SQL Server
-        @Procedure(procedureName = "sp_DatGheAnToan")
+        @Query(value = "EXEC sp_DatGheAnToan @id_SuatChieu = :id_SuatChieu, @id_Ghe = :id_Ghe, @id_HoaDon = :id_HoaDon", nativeQuery = true)
         Integer datGheAnToan(
                         @Param("id_SuatChieu") Integer idSuatChieu,
                         @Param("id_Ghe") Integer idGhe,
-                        @Param("id_HoaDon") String idHoaDon);
+                        @Param("id_HoaDon") Integer idHoaDon);
 
-        // Dùng để xóa vé khi người dùng hủy hoặc thanh toán thất bại
-        void deleteByHoaDon_IdHoaDon(String idHoaDon);
+        // Đã sửa String thành Integer
+        void deleteByHoaDon_IdHoaDon(Integer idHoaDon);
 
-        List<Ve> findByHoaDon_IdHoaDon(String idHoaDon);
+        // Đã sửa String thành Integer
+        List<Ve> findByHoaDon_IdHoaDon(Integer idHoaDon);
+
+        List<Ve> findBySuatChieu(SuatChieu suatChieu);
 
         // 1. Thống kê doanh thu theo phim
         @Query("SELECT p.id AS idPhim, p.ten AS tenPhim, COUNT(v.id) AS soVeDaBan, SUM(s.giaMoiVe) AS tongDoanhThu " +
@@ -51,5 +54,7 @@ public interface VeRepository extends JpaRepository<Ve, Integer> {
                         @Param("tuNgay") LocalDateTime tuNgay,
                         @Param("denNgay") LocalDateTime denNgay);
 
-        List<Ve> findBySuatChieu(SuatChieu suatChieu);
+        // Đếm tổng số vé đã bán (không tính vé hủy)
+        @Query("SELECT COUNT(v) FROM Ve v WHERE v.trangThai != 'DAHUY'")
+        Long countVeDaBan();
 }

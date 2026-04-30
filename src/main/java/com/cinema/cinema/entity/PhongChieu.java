@@ -26,4 +26,7 @@ public class PhongChieu {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "id_Rap", nullable = false)
     private Rap rap;
+
+    @Column(name = "MaCoSo")
+    private String maCoSo;
 }

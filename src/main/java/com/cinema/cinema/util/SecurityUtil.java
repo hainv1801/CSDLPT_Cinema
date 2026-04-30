@@ -4,6 +4,7 @@ import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 
 import javax.crypto.SecretKey;
@@ -52,7 +53,7 @@ public class SecurityUtil {
         userToken.setId(dto.getUser().getId());
         userToken.setTaiKhoan(dto.getUser().getTaiKhoan());
         userToken.setHoTen(dto.getUser().getHoTen());
-
+        userToken.setMaCoSo(dto.getUser().getMaCoSo());
         Instant now = Instant.now();
         Instant validity = now.plus(this.accessTokenExpiration, ChronoUnit.SECONDS);
 
@@ -81,7 +82,7 @@ public class SecurityUtil {
         userToken.setId(dto.getUser().getId());
         userToken.setTaiKhoan(dto.getUser().getTaiKhoan());
         userToken.setHoTen(dto.getUser().getHoTen());
-
+        userToken.setMaCoSo(dto.getUser().getMaCoSo());
         JwtClaimsSet claims = JwtClaimsSet.builder()
                 .issuedAt(now)
                 .expiresAt(validity)

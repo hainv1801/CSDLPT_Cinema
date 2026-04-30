@@ -15,7 +15,6 @@ import com.cinema.cinema.dto.response.ResHoaDonDTO;
 
 import com.cinema.cinema.dto.response.ResultPaginationDTO;
 import com.cinema.cinema.entity.HoaDon;
-import com.cinema.cinema.entity.NguoiDung;
 import com.cinema.cinema.repository.HoaDonRepository;
 
 import lombok.extern.slf4j.Slf4j;

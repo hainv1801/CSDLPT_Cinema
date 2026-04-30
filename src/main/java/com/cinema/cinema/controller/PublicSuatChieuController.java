@@ -3,6 +3,7 @@ package com.cinema.cinema.controller;
 import com.cinema.cinema.dto.request.ReqDatVeDTO;
 import com.cinema.cinema.dto.response.ResGheDTO;
 import com.cinema.cinema.dto.response.ResSuatChieuDTO;
+import com.cinema.cinema.service.BookingService;
 import com.cinema.cinema.service.SuatChieuService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.format.annotation.DateTimeFormat;
@@ -18,6 +19,8 @@ import java.util.Map;
 public class PublicSuatChieuController {
     @Autowired
     private SuatChieuService suatChieuService;
+    @Autowired
+    private BookingService bookingService;
 
     // Lấy lịch theo Phim
     @GetMapping("/phim/{idPhim}")
@@ -65,7 +68,7 @@ public class PublicSuatChieuController {
     @PostMapping("/dat-ve")
     public ResponseEntity<?> datVe(@RequestBody ReqDatVeDTO req) {
         try {
-            Integer maHoaDon = suatChieuService.datVe(req);
+            Integer maHoaDon = bookingService.datVe(req);
 
             return ResponseEntity.ok(Map.of("idHoaDon", maHoaDon));
         } catch (Exception e) {

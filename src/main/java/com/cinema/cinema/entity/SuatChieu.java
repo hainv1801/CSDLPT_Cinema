@@ -30,4 +30,5 @@ public class SuatChieu {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "id_Phim", nullable = false)
     private Phim phim;
+
 }

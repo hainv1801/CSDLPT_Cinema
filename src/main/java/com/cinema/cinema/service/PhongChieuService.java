@@ -7,8 +7,10 @@ import com.cinema.cinema.entity.Rap;
 import com.cinema.cinema.repository.GheRepository;
 import com.cinema.cinema.repository.PhongChieuRepository;
 import com.cinema.cinema.repository.RapRepository;
+
 import jakarta.transaction.Transactional;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
@@ -17,9 +19,14 @@ import java.util.List;
 @Service
 public class PhongChieuService {
 
-    @Autowired private PhongChieuRepository phongChieuRepository;
-    @Autowired private GheRepository gheRepository;
-    @Autowired private RapRepository rapRepository;
+    @Autowired
+    private PhongChieuRepository phongChieuRepository;
+    @Autowired
+    private GheRepository gheRepository;
+    @Autowired
+    private RapRepository rapRepository;
+    @Autowired
+    private RapService rapService;
 
     @Transactional
     public PhongChieu taoPhongChieuVaSinhGhe(ReqPhongChieuDTO request) {
@@ -31,7 +38,7 @@ public class PhongChieuService {
         PhongChieu phong = new PhongChieu();
         phong.setTrangThai("DANGHOATDONG");
         phong.setRap(rap);
-
+        phong.setMaCoSo(this.rapService.getRapById(request.getIdRap()).getKhuVuc());
         phong.setSucChua(request.getSoHang() * request.getSoCot());
 
         PhongChieu phongDaLuu = phongChieuRepository.save(phong);

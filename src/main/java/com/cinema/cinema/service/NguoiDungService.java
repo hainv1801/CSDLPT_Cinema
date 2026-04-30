@@ -98,6 +98,7 @@ public class NguoiDungService {
         res.setSdt(user.getSdt());
         res.setVaiTro(user.getVaiTro());
         res.setNgaySinh(user.getNgaySinh());
+        res.setMaCoSo(user.getMaCoSo());
         return res;
     }
 
