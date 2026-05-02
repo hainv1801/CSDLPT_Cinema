@@ -1,79 +1,66 @@
 package com.cinema.cinema.service;
 
-import java.time.LocalDateTime;
-
-import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Service;
 
 import com.cinema.cinema.dto.request.ReqDatVeDTO;
-import com.cinema.cinema.entity.HoaDon;
-import com.cinema.cinema.entity.NguoiDung;
-import com.cinema.cinema.entity.PhuongThucThanhToan;
-import com.cinema.cinema.entity.SuatChieu;
-import com.cinema.cinema.repository.HoaDonRepository;
-import com.cinema.cinema.repository.NguoiDungRepository;
-import com.cinema.cinema.repository.PhuongThucThanhToanRepository;
-import com.cinema.cinema.repository.SuatChieuRepository;
+import java.util.stream.Collectors;
 
-import jakarta.transaction.Transactional;
-
-@Slf4j
 @Service
 public class BookingService {
 
     @Autowired
-    private SuatChieuRepository suatChieuRepository;
-    @Autowired
-    private NguoiDungRepository nguoiDungRepository;
-    @Autowired
-    private PhuongThucThanhToanRepository phuongThucRepository;
-    @Autowired
-    private HoaDonRepository hoaDonRepository;
+    private JdbcTemplate jdbcTemplate;
 
-    @Autowired
-    private VeService veService;
+    @Value("${app.cinema.ma-co-so}")
+    private String maCoSoHienTai;
 
-    @Transactional(rollbackOn = Exception.class)
+    @Value("${app.cinema.linked-server:}")
+    private String linkedServerName;
+
+    // ĐÃ XÓA @Transactional để nhường quyền quản lý ACID hoàn toàn cho SQL Server
     public Integer datVe(ReqDatVeDTO req) {
-        log.info("--- BẮT ĐẦU QUÁ TRÌNH TẠO HÓA ĐƠN ---");
 
-        // 1. Kiểm tra Suất chiếu, Người dùng, Phương thức thanh toán
-        SuatChieu suatChieu = suatChieuRepository.findById(req.getIdSuatChieu())
-                .orElseThrow(() -> new RuntimeException("Không tìm thấy suất chiếu"));
+        if (req.getDanhSachIdGhe() == null || req.getDanhSachIdGhe().isEmpty()) {
+            throw new RuntimeException("Vui lòng chọn ít nhất 1 ghế!");
+        }
 
-        NguoiDung nguoiDung = nguoiDungRepository.findById(req.getIdNguoiDung())
-                .orElseThrow(() -> new RuntimeException("Không tìm thấy người dùng"));
+        String chuoiIdGhe = req.getDanhSachIdGhe().stream()
+                .map(String::valueOf)
+                .collect(Collectors.joining(","));
 
-        PhuongThucThanhToan pttt = phuongThucRepository.findById(req.getIdPhuongThucThanhToan())
-                .orElseThrow(() -> new RuntimeException("Không tìm thấy phương thức thanh toán"));
+        String sqlCall;
+        if ("KV_00".equals(maCoSoHienTai)) {
+            // Máy chủ Trung tâm
+            sqlCall = "EXEC [dbo].[sp_DatVeToanQuoc] ?, ?, ?, ?";
+        } else {
+            // Máy trạm chi nhánh -> Gọi lên Trung tâm
+            sqlCall = "EXEC [" + linkedServerName + "].[rapchieuphim].[dbo].[sp_DatVeToanQuoc] ?, ?, ?, ?";
+        }
 
-        // LẤY MÃ CƠ SỞ CỦA RẠP CHIẾU (Nơi khách muốn xem phim)
-        String maCoSoRap = suatChieu.getPhongChieu().getMaCoSo();
+        try {
+            Integer result = jdbcTemplate.queryForObject(
+                    sqlCall,
+                    Integer.class,
+                    req.getIdSuatChieu(),
+                    req.getIdNguoiDung(),
+                    req.getIdPhuongThucThanhToan(),
+                    chuoiIdGhe
+            );
 
-        // 2. Tạo Hóa Đơn và lưu để lấy ID
-        HoaDon hoaDon = new HoaDon();
-        hoaDon.setNgayThanhToan(LocalDateTime.now());
-        hoaDon.setTrangThai("DATHANHTOAN"); // Tùy logic của bạn, có thể là CHOGIAODICH
-        hoaDon.setNguoiDung(nguoiDung);
-        hoaDon.setPhuongThucThanhToan(pttt);
-        hoaDon.setMaCoSo(maCoSoRap);
+            if (result == null || result == 0) {
+                throw new RuntimeException("Lỗi hệ thống cơ sở dữ liệu khi đặt vé.");
+            } else if (result == -1) {
+                // Bạn có thể đổi lại thành SeatAlreadyBookedException như cũ cho chuẩn!
+                throw new RuntimeException("Rất tiếc, một số ghế bạn chọn vừa có người đặt mất. Vui lòng chọn lại!");
+            }
 
-        // Lưu Hóa Đơn xuống DB nội bộ để lấy idHoaDon
-        HoaDon savedHoaDon = hoaDonRepository.save(hoaDon);
-        log.info("Đã tạo thành công Hóa Đơn ID: {} tại cơ sở: {}", savedHoaDon.getIdHoaDon(), maCoSoRap);
+            return result;
 
-        // 3. Chuyển việc kiểm tra trùng ghế và tạo Vé cho Stored Procedure phân tán lo
-        // Truyền thêm biến maCoSoRap vào đây để SP SQL Server biết đường định tuyến (Linked Server)
-        veService.giuChoVaTaoVeTamThoi(
-                savedHoaDon.getIdHoaDon(),
-                req.getIdSuatChieu(),
-                req.getDanhSachIdGhe(),
-                maCoSoRap
-        );
-
-        // Nếu mọi thứ trót lọt (không bị văng Exception), trả về mã Hóa Đơn cho Frontend
-        log.info("--- HOÀN TẤT QUÁ TRÌNH TẠO HÓA ĐƠN VÀ ĐẶT GHẾ ---");
-        return savedHoaDon.getIdHoaDon();
+        } catch (Exception e) {
+            throw new RuntimeException("Lỗi giao dịch qua Linked Server: " + e.getMessage());
+        }
     }
 }
