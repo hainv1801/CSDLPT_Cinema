@@ -23,6 +23,7 @@ import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.jpa.domain.Specification;
+import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDate;
@@ -47,6 +48,14 @@ public class SuatChieuService {
     private PhongChieuRepository phongRepository;
     @Autowired
     private GheRepository gheRepository;
+    @Autowired
+    private JdbcTemplate jdbcTemplate;
+
+    @Value("${app.cinema.ma-co-so}")
+    private String maCoSoHienTai;
+
+    @Value("${app.cinema.linked-server}")
+    private String linkedServerName;
 
     @Transactional
     public ResSuatChieuDTO createSuatChieu(ReqSuatChieuDTO req) {
@@ -224,31 +233,72 @@ public class SuatChieuService {
         }).collect(Collectors.toList());
     }
 
+    // public List<ResGheDTO> layDanhSachGhe(Integer idSuatChieu) {
+    // // 1. Tìm suất chiếu -> Từ đó lấy ra cái Phòng chiếu -> Lấy được TOÀN BỘ GHẾ
+    // của
+    // // phòng đó.
+    // SuatChieu suat = suatChieuRepository.findById(idSuatChieu).orElseThrow();
+    // List<Ghe> tatCaGhe = gheRepository.findByPhongChieu(suat.getPhongChieu());
+
+    // // 2. Tìm TOÀN BỘ VÉ đã được bán ra thuộc về idSuatChieu này.
+    // List<Ve> veDaBan = veRepository.findBySuatChieu(suat);
+
+    // // Rút trích ra 1 danh sách chỉ chứa ID của các ghế đã bị mua
+    // List<Integer> listIdGheDaMua = veDaBan.stream()
+    // .map(ve -> ve.getGhe().getIdGhe())
+    // .toList();
+
+    // // 3. Lắp ráp thành DTO
+    // List<ResGheDTO> result = new ArrayList<>();
+    // for (Ghe g : tatCaGhe) {
+    // ResGheDTO dto = new ResGheDTO();
+    // dto.setIdGhe(g.getIdGhe());
+    // // Ép kiểu số 1 thành chữ 'A', số 2 thành chữ 'B'...
+    // char tenHang = (char) ('A' + g.getHang() - 1);
+
+    // // Ghép chữ cái hàng với số cột
+    // dto.setTenGhe(tenHang + "" + g.getCot());
+    // // Nếu ID ghế nằm trong mảng đã mua -> daDat = true
+    // if (listIdGheDaMua.contains(g.getIdGhe())) {
+    // dto.setDaDat(1);
+    // } else {
+    // dto.setDaDat(0);
+    // }
+    // result.add(dto);
+    // }
+
+    // return result;
+    // }
     public List<ResGheDTO> layDanhSachGhe(Integer idSuatChieu) {
-        // 1. Tìm suất chiếu -> Từ đó lấy ra cái Phòng chiếu -> Lấy được TOÀN BỘ GHẾ của
-        // phòng đó.
+        // 1. Tìm suất chiếu và lấy TOÀN BỘ GHẾ của phòng chiếu đó
         SuatChieu suat = suatChieuRepository.findById(idSuatChieu).orElseThrow();
         List<Ghe> tatCaGhe = gheRepository.findByPhongChieu(suat.getPhongChieu());
 
-        // 2. Tìm TOÀN BỘ VÉ đã được bán ra thuộc về idSuatChieu này.
-        List<Ve> veDaBan = veRepository.findBySuatChieu(suat);
+        // 2. Lấy danh sách ID ghế đã mua từ MÁY CHỦ TRUNG TÂM qua Linked Server
+        String sqlLietKeGheDaBan;
+        if ("KV_00".equals(maCoSoHienTai)) {
+            // Đang ở Trung tâm thì truy vấn trực tiếp
+            sqlLietKeGheDaBan = "SELECT id_Ghe FROM Ve WHERE id_SuatChieu = ? AND trangThai != 'DAHUY'";
+        } else {
+            // Đang ở Chi nhánh thì truy vấn qua Linked Server
+            sqlLietKeGheDaBan = "SELECT id_Ghe FROM [" + linkedServerName + "].[rapchieuphim].[dbo].[Ve] " +
+                    "WHERE id_SuatChieu = ? AND trangThai != 'DAHUY'";
+        }
 
-        // Rút trích ra 1 danh sách chỉ chứa ID của các ghế đã bị mua
-        List<Integer> listIdGheDaMua = veDaBan.stream()
-                .map(ve -> ve.getGhe().getIdGhe())
-                .toList();
+        // Trả về một List chứa các idGhe đã được đặt
+        List<Integer> listIdGheDaMua = jdbcTemplate.queryForList(sqlLietKeGheDaBan, Integer.class, idSuatChieu);
 
-        // 3. Lắp ráp thành DTO
+        // 3. Lắp ráp thành DTO trả về cho Frontend
         List<ResGheDTO> result = new ArrayList<>();
         for (Ghe g : tatCaGhe) {
             ResGheDTO dto = new ResGheDTO();
             dto.setIdGhe(g.getIdGhe());
+
             // Ép kiểu số 1 thành chữ 'A', số 2 thành chữ 'B'...
             char tenHang = (char) ('A' + g.getHang() - 1);
-
-            // Ghép chữ cái hàng với số cột
             dto.setTenGhe(tenHang + "" + g.getCot());
-            // Nếu ID ghế nằm trong mảng đã mua -> daDat = true
+
+            // Kiểm tra: Nếu ID ghế nằm trong mảng lấy từ Máy chủ Trung tâm -> Đã bán
             if (listIdGheDaMua.contains(g.getIdGhe())) {
                 dto.setDaDat(1);
             } else {
