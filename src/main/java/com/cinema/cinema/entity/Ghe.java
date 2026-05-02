@@ -25,9 +25,6 @@ public class Ghe {
     @Column(name = "trangThai", nullable = false)
     private String trangThai;
 
-    @Column(name = "daDat")
-    private Integer daDAt;
-
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "id_PhongChieu", nullable = false)
     private PhongChieu phongChieu;

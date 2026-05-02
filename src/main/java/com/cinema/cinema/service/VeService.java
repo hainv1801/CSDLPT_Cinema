@@ -20,30 +20,61 @@ public class VeService {
 
     private final VeRepository veRepository;
 
+//    @Transactional(rollbackFor = Exception.class)
+//    public void giuChoVaTaoVeTamThoi(Integer idHoaDon, Integer idSuatChieu, List<Integer> danhSachIdGhe) {
+//        log.info("BẮT ĐẦU: Đặt vé cho Hóa Đơn [{}] - Suất chiếu [{}]", idHoaDon, idSuatChieu);
+//
+//        if (danhSachIdGhe == null || danhSachIdGhe.isEmpty()) {
+//            throw new IllegalArgumentException("Danh sách ghế không được để trống!");
+//        }
+//
+//        for (Integer idGhe : danhSachIdGhe) {
+//            // Gọi SP dưới Database để đảm bảo xử lý đồng thời an toàn
+//            Integer result = veRepository.datGheAnToan(idSuatChieu, idGhe, idHoaDon);
+//
+//            if (result == null || result == 0) {
+//                log.warn("THẤT BẠI: Ghế ID [{}] đã bị đặt mất!", idGhe);
+//                // Ném lỗi để Spring Boot tự động Rollback toàn bộ Hóa Đơn và các Vé trước đó
+//                throw new SeatAlreadyBookedException(
+//                        "Rất tiếc, một số ghế bạn chọn vừa có người nhanh tay đặt mất. Vui lòng chọn ghế khác!");
+//            } else if (result == -1) {
+//                log.error("LỖI HỆ THỐNG: Database trả về -1 khi đặt ghế [{}]", idGhe);
+//                throw new SystemTransactionException(
+//                        "Hệ thống đang bận, không thể đặt vé lúc này. Vui lòng thử lại sau!");
+//            }
+//        }
+//        log.info("THÀNH CÔNG: Đã tạo vé an toàn cho Hóa Đơn [{}]", idHoaDon);
+//    }
+
     @Transactional(rollbackFor = Exception.class)
-    public void giuChoVaTaoVeTamThoi(Integer idHoaDon, Integer idSuatChieu, List<Integer> danhSachIdGhe) {
-        log.info("BẮT ĐẦU: Đặt vé cho Hóa Đơn [{}] - Suất chiếu [{}]", idHoaDon, idSuatChieu);
+    public void giuChoVaTaoVeTamThoi(Integer idHoaDon, Integer idSuatChieu, List<Integer> danhSachIdGhe, String maCoSoRap) {
+        log.info("BẮT ĐẦU: Đặt vé phân tán cho Hóa Đơn [{}] - Suất chiếu [{}] - Rạp [{}]", idHoaDon, idSuatChieu, maCoSoRap);
 
         if (danhSachIdGhe == null || danhSachIdGhe.isEmpty()) {
             throw new IllegalArgumentException("Danh sách ghế không được để trống!");
         }
 
-        for (Integer idGhe : danhSachIdGhe) {
-            // Gọi SP dưới Database để đảm bảo xử lý đồng thời an toàn
-            Integer result = veRepository.datGheAnToan(idSuatChieu, idGhe, idHoaDon);
+        // BIẾN ĐỔI: Gom danh sách ID ghế thành 1 chuỗi cách nhau bởi dấu phẩy (VD: "1,4,5")
+        String chuoiGhe = danhSachIdGhe.stream()
+                .map(String::valueOf)
+                .collect(Collectors.joining(","));
 
-            if (result == null || result == 0) {
-                log.warn("THẤT BẠI: Ghế ID [{}] đã bị đặt mất!", idGhe);
-                // Ném lỗi để Spring Boot tự động Rollback toàn bộ Hóa Đơn và các Vé trước đó
-                throw new SeatAlreadyBookedException(
-                        "Rất tiếc, một số ghế bạn chọn vừa có người nhanh tay đặt mất. Vui lòng chọn ghế khác!");
-            } else if (result == -1) {
-                log.error("LỖI HỆ THỐNG: Database trả về -1 khi đặt ghế [{}]", idGhe);
-                throw new SystemTransactionException(
-                        "Hệ thống đang bận, không thể đặt vé lúc này. Vui lòng thử lại sau!");
+        try {
+            // GỌI SP PHÂN TÁN: SQL Server sẽ đọc maCoSoRap và tự quyết định dùng DB nội bộ hay Linked Server
+            veRepository.datVeQuaLinkedServer(idHoaDon, idSuatChieu, chuoiGhe, maCoSoRap);
+
+        } catch (Exception e) {
+            log.error("LỖI GIAO DỊCH PHÂN TÁN: {}", e.getMessage());
+
+            // Bắt lỗi từ SP ném ra (VD: Lỗi mất kết nối Linked Server, hoặc ghế đã bị đặt)
+            if (e.getMessage().contains("đã có người đặt") || e.getMessage().contains("SeatAlreadyBooked")) {
+                throw new SeatAlreadyBookedException("Rất tiếc, ghế bạn chọn vừa có người đặt mất. Vui lòng chọn ghế khác!");
+            } else {
+                throw new SystemTransactionException("Hệ thống kết nối liên chi nhánh đang bận. Vui lòng thử lại sau!");
             }
         }
-        log.info("THÀNH CÔNG: Đã tạo vé an toàn cho Hóa Đơn [{}]", idHoaDon);
+
+        log.info("THÀNH CÔNG: Đã tạo vé phân tán an toàn cho Hóa Đơn [{}]", idHoaDon);
     }
 
     @Transactional

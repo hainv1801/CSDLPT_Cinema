@@ -57,4 +57,12 @@ public interface VeRepository extends JpaRepository<Ve, Integer> {
         // Đếm tổng số vé đã bán (không tính vé hủy)
         @Query("SELECT COUNT(v) FROM Ve v WHERE v.trangThai != 'DAHUY'")
         Long countVeDaBan();
+
+        @Query(value = "EXEC sp_DatVe_PhanTan @id_HoaDon = :idHoaDon, @id_SuatChieu = :idSuatChieu, @danhSachGhe = :ghe, @maCoSoRap = :maCoSo", nativeQuery = true)
+        void datVeQuaLinkedServer(
+                @Param("idHoaDon") Integer idHoaDon,
+                @Param("idSuatChieu") Integer idSuatChieu,
+                @Param("ghe") String danhSachGhe,  // Sẽ nhận chuỗi "1,2,3"
+                @Param("maCoSo") String maCoSoRap  // Ví dụ: "HN", "TH", "NA"
+        );
 }
