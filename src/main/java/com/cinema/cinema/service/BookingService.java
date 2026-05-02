@@ -20,47 +20,41 @@ public class BookingService {
     @Value("${app.cinema.linked-server:}")
     private String linkedServerName;
 
-    // ĐÃ XÓA @Transactional để nhường quyền quản lý ACID hoàn toàn cho SQL Server
     public Integer datVe(ReqDatVeDTO req) {
-
         if (req.getDanhSachIdGhe() == null || req.getDanhSachIdGhe().isEmpty()) {
             throw new RuntimeException("Vui lòng chọn ít nhất 1 ghế!");
         }
 
-        String chuoiIdGhe = req.getDanhSachIdGhe().stream()
-                .map(String::valueOf)
-                .collect(Collectors.joining(","));
+        // 1. Lấy mã cơ sở của Rạp đang chiếu Suất này
+        String maCoSoCuaRap = jdbcTemplate.queryForObject(
+                "SELECT pc.MaCoSo FROM SuatChieu sc JOIN PhongChieu pc ON sc.id_PhongChieu = pc.id_PhongChieu WHERE sc.id_SuatChieu = ?",
+                String.class, req.getIdSuatChieu()
+        );
 
+        String chuoiIdGhe = req.getDanhSachIdGhe().stream().map(String::valueOf).collect(Collectors.joining(","));
         String sqlCall;
-        if ("KV_00".equals(maCoSoHienTai)) {
-            // Máy chủ Trung tâm
+
+        // 2. Logic định tuyến thông minh
+        if (maCoSoHienTai.trim().equalsIgnoreCase(maCoSoCuaRap.trim()) || maCoSoHienTai.trim().equalsIgnoreCase("KV_00")) {
+            // Mua rạp local -> Gọi DB local (Không qua Linked Server)
             sqlCall = "EXEC [dbo].[sp_DatVeToanQuoc] ?, ?, ?, ?";
         } else {
-            // Máy trạm chi nhánh -> Gọi lên Trung tâm
+            // Mua rạp chi nhánh khác -> Bắn qua Linked Server
             sqlCall = "EXEC [" + linkedServerName + "].[rapchieuphim].[dbo].[sp_DatVeToanQuoc] ?, ?, ?, ?";
         }
 
         try {
             Integer result = jdbcTemplate.queryForObject(
-                    sqlCall,
-                    Integer.class,
-                    req.getIdSuatChieu(),
-                    req.getIdNguoiDung(),
-                    req.getIdPhuongThucThanhToan(),
-                    chuoiIdGhe
+                    sqlCall, Integer.class,
+                    req.getIdSuatChieu(), req.getIdNguoiDung(), req.getIdPhuongThucThanhToan(), chuoiIdGhe
             );
 
-            if (result == null || result == 0) {
-                throw new RuntimeException("Lỗi hệ thống cơ sở dữ liệu khi đặt vé.");
-            } else if (result == -1) {
-                // Bạn có thể đổi lại thành SeatAlreadyBookedException như cũ cho chuẩn!
-                throw new RuntimeException("Rất tiếc, một số ghế bạn chọn vừa có người đặt mất. Vui lòng chọn lại!");
-            }
-
+            if (result == null || result == 0) throw new RuntimeException("Lỗi hệ thống CSDL.");
+            if (result == -1) throw new RuntimeException("Rất tiếc, ghế bạn chọn vừa có người đặt!");
             return result;
 
         } catch (Exception e) {
-            throw new RuntimeException("Lỗi giao dịch qua Linked Server: " + e.getMessage());
+            throw new RuntimeException("Lỗi giao dịch phân tán: " + e.getMessage());
         }
     }
 }
